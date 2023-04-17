@@ -1,0 +1,23 @@
+{
+  "name": "@hexlet/code",
+  "version": "1.0.0",
+  "description": "RSS-reader",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamIvan-ark/frontend-project-11.git"
+  },
+  "keywords": [
+    "RSS"
+  ],
+  "author": "Ivan Samozhenov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SamIvan-ark/frontend-project-11/issues"
+  },
+  "homepage": "https://github.com/SamIvan-ark/frontend-project-11#readme"
+}
