@@ -6,21 +6,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSS агрегатор | Frontend project</title>
   </head>
-  <body>
-    <main>
-      <section>
-        <div class="wrap">
-          <h1>RSS агрегатор</h1>
-          <p>Начните читать RSS сегодня! Это легко, это красиво</p>
-          <form action="post">
-            <input type="text" placeholder="Ссылка RSS">
-            <button>Добавить</button>
+  <body class="d-flex flex-column min-vh-100">
+    <main class="flex-grow-1 justify-content-center">
+      <section class="container-fluid bg-dark p-5">
+        <div class="col-md-10 col-lg-8 mx-auto text-white">
+          <h1 class="display-3 mb-0">RSS агрегатор</h1>
+          <p class="lead">Начните читать RSS сегодня! Это легко, это красиво</p>
+          <form action="" class="rss-form text-body">
+            <div class="row">
+              <div class="col">
+                <div class="form-floating">
+                  <input id="url-input" autofocus="" required="" name="url" aria-label="url" class="form-control w-100" placeholder="ссылка RSS" autocomplete="off"> 
+                  <label for="url-input">Ссылка RSS</label>
+                </div>
+              </div>
+              <div class="col-auto">
+                <button type="submit" aria-label="add" class="h-100 btn btn-lg btn-primary px-sm-5">Добавить</button>
+            </div>
+            </div>
           </form>
+          <p class="mt-2 mb-0 text-muted">Пример: https://ru.hexlet.io/lessons.rss</p>
+      </section>
+      <section class="container-fluid container-xxl p-5">
+        <div class="row">
+          <div class="col-md-10 col-lg-8 order-1 mx-auto posts"></div>
+          <div class="col-md-10 col-lg-4 mx-auto order-0 order-lg-1 feeds"></div>
         </div>
       </section>
     </main>
-    <footer>
-      <p>Created by <a href="https://github.com/SamIvan-ark/frontend-project-11">Ivan Samozhenov</a></p>
+    <footer class="footer border-top py-3 mt-5 bg-light">
+      <div class="container-xl">
+        <div class="text-center">
+          <p>Created by <a href="https://github.com/SamIvan-ark/frontend-project-11" target="_blank">Ivan Samozhenov</a></p>
+        </div>
+      </div>
     </footer>
   </body>
 </html>
