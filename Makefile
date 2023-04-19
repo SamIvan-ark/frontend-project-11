@@ -13,10 +13,11 @@ lint: #проверка линтером
 w-build: 
 	npx webpack --mode=production --node-env=production
 
-w-build-dev: 
-	npx webpack --mode=development
+# w-build-dev: 
+# 	npx webpack --mode=development
 
-w-build-prod: 
+w-build-prod:
+	rm -rf dist
 	npx webpack --mode=production --node-env=production
 
 w-watch: 
