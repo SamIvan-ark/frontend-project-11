@@ -9,3 +9,18 @@ link: #установка пакета в систему
 
 lint: #проверка линтером
 	npx eslint .
+
+w-build: 
+	npx webpack --mode=production --node-env=production
+
+w-build-dev: 
+	npx webpack --mode=development
+
+w-build-prod: 
+	npx webpack --mode=production --node-env=production
+
+w-watch: 
+	npx webpack --watch
+
+w-serve: 
+	npx webpack serve
