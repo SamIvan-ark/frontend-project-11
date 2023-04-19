@@ -5,4 +5,4 @@
 
 
 ### Available in web:
-https://frontend-project-11-zeta-teal.vercel.app/
+frontend-project-11-samivan-ark.vercel.app
