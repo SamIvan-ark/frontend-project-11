@@ -1,17 +1,8 @@
-/* eslint-disable no-underscore-dangle */
-// Generated using webpack-cli https://github.com/webpack/webpack-cli
-
-import { path, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export default {
   entry: './src/index.js',
   output: {
-    path: path.resolve(__dirname, 'dist'),
     clean: true,
   },
   devServer: {
