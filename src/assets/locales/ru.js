@@ -16,8 +16,13 @@ export default {
     },
     example: 'Пример: https://ru.hexlet.io/lessons.rss',
     content: {
-      posts: 'Посты',
-      feeds: 'Фиды',
+      posts: {
+        title: 'Посты',
+        button: 'Просмотр',
+      },
+      feeds: {
+        title: 'Фиды',
+      },
       popup: {
         expand: 'Читать полностью',
         close: 'Закрыть',
