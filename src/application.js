@@ -1,9 +1,15 @@
 import './styles/style.css';
 import 'bootstrap/dist/css/bootstrap.css';
+import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 import makeWatchedState from './view.js';
 import ru from './assets/locales/index.js';
+import makeUniqueIdGenerator from './assets/helpers/uniqueIdGenerator.js';
+import parseRss from './assets/helpers/parser.js';
+
+const uniqueFeedIdGenerator = makeUniqueIdGenerator();
+const uniquePostIdGenerator = makeUniqueIdGenerator();
 
 const i18nInstance = i18next.createInstance();
 i18nInstance.init({
@@ -30,14 +36,19 @@ const state = {
       type: '',
     },
   },
+  fetch: '',
   data: {
-    sources: [],
+    feeds: [],
+    posts: [],
   },
 };
 
 const watchedState = makeWatchedState(state, i18nInstance);
 
-const buildSchema = (sources) => yup.string().url().notOneOf(sources);
+const buildSchema = (feeds) => yup
+  .string()
+  .url()
+  .notOneOf(feeds.map(({ link }) => link));
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
@@ -46,20 +57,50 @@ export default () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
-    const link = data.get('url');
-    const validationResult = validateLink(link, buildSchema(watchedState.data.sources));
+    const newLink = data.get('url').trim();
+    const validationResult = validateLink(newLink, buildSchema(watchedState.data.feeds));
+    const newFeedId = uniqueFeedIdGenerator();
     validationResult
-      .then(() => {
+      .then((link) => {
+        watchedState.fetch = 'filling';
+        return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`);
+      })
+      .then((responce) => responce.data.contents)
+      .then((rawData) => {
+        if (rawData === '') {
+          throw new AxiosError('form.messages.errors.noRss');
+        }
+        watchedState.fetch = 'filled';
+        const rss = parseRss(rawData, newFeedId, uniquePostIdGenerator);
+        return rss;
+      })
+      .then(({ feed, posts }) => {
+        const fullFeedData = { link: newLink, ...feed };
+        watchedState.data.feeds[newFeedId] = fullFeedData;
+        watchedState.data.posts = [...state.data.posts, ...posts];
         watchedState.form.status = 'updated';
         watchedState.form.message = { key: 'form.messages.success', type: 'success' };
-        watchedState.data.sources.push(link);
       })
       .catch((err) => {
-        if (err.name === 'ValidationError') {
-          watchedState.form.status = 'invalid';
-          watchedState.form.message = { key: err.message, type: 'danger' };
-        } else {
-          throw err;
+        switch (err.name) {
+          case 'ValidationError':
+            watchedState.form.status = 'invalid';
+            watchedState.form.message = { key: err.message };
+            break;
+          case 'AxiosError':
+            watchedState.fetch = 'failed';
+            watchedState.form.message = { key: err.message };
+            break;
+          case 'SyntaxError':
+            if (err.message.endsWith('noRss')) {
+              watchedState.fetch = 'failed';
+              watchedState.form.message = { key: err.message };
+              break;
+            } else {
+              throw err;
+            }
+          default:
+            console.log(err, JSON.stringify(err));
         }
       });
   });
