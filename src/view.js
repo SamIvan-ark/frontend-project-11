@@ -39,7 +39,7 @@ const renderFeeds = (container, feeds, i18n) => {
 
 const renderPosts = (container, posts, i18n) => {
   container.innerHTML = '';
-  const sortedPosts = posts.sort((a, b) => b.feedId - a.feedId);
+  const sortedPosts = posts.sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
   const { wrapper, ul } = generateContentWrapper(i18n.t('content.posts.title'));
 

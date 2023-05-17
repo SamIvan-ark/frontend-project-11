@@ -71,8 +71,17 @@ export default () => {
           throw new AxiosError('form.messages.errors.noRss');
         }
         watchedState.fetch = 'filled';
-        const rss = parseRss(rawData, newFeedId, uniquePostIdGenerator);
-        return rss;
+        const parsedRss = parseRss(rawData, newFeedId);
+        const postsDataWithIds = parsedRss.posts.map((post) => {
+          const postId = getNextUniquePostId();
+          return {
+            ...post,
+            id: postId,
+            processedAt: Date.now(),
+          };
+        });
+        parsedRss.posts = postsDataWithIds;
+        return parsedRss;
       })
       .then(({ feed, posts }) => {
         const fullFeedData = { link: newLink, ...feed };
