@@ -8,8 +8,8 @@ import ru from './assets/locales/index.js';
 import makeUniqueIdGenerator from './assets/helpers/uniqueIdGenerator.js';
 import parseRss from './assets/helpers/parser.js';
 
-const uniqueFeedIdGenerator = makeUniqueIdGenerator();
-const uniquePostIdGenerator = makeUniqueIdGenerator();
+const getNextUniqueFeedId = makeUniqueIdGenerator();
+const getNextUniquePostId = makeUniqueIdGenerator();
 
 const i18nInstance = i18next.createInstance();
 i18nInstance.init({
@@ -49,6 +49,9 @@ const buildSchema = (feeds) => yup
   .string()
   .url()
   .notOneOf(feeds.map(({ link }) => link));
+
+const fetchFeed = ({ link }) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`);
+
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
@@ -59,7 +62,7 @@ export default () => {
     const data = new FormData(e.target);
     const newLink = data.get('url').trim();
     const validationResult = validateLink(newLink, buildSchema(watchedState.data.feeds));
-    const newFeedId = uniqueFeedIdGenerator();
+    const newFeedId = getNextUniqueFeedId();
     validationResult
       .then((link) => {
         watchedState.fetch = 'filling';
@@ -113,4 +116,34 @@ export default () => {
         }
       });
   });
+
+  const delayFunctionExecuteRepeat = (fetch) => {
+    if (state.data.feeds.length > 0) {
+      state.data.feeds.forEach((feed, id) => {
+        fetch(feed)
+          .then((responce) => parseRss(responce.data.contents, id))
+          .then(({ posts }) => posts)
+          .then((newPosts) => {
+            const knownPostsLinks = state.data.posts.map((post) => post.link);
+            const filteredNewPosts = newPosts
+              .filter(({ link }) => !knownPostsLinks.includes(link));
+            if (filteredNewPosts.length > 0) {
+              const postsDataWithIds = filteredNewPosts.map((post) => {
+                const postId = getNextUniquePostId();
+                return {
+                  ...post,
+                  id: postId,
+                  processedAt: Date.now(),
+                };
+              });
+              watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
+            }
+          })
+          .catch((err) => console.log(err));
+      });
+    }
+    setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+  };
+
+  delayFunctionExecuteRepeat(fetchFeed);
 };
