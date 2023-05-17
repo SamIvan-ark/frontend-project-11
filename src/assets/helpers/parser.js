@@ -1,7 +1,7 @@
 const parser = new DOMParser();
 const getterFromDocByTag = (dom) => (tag) => dom.querySelector(tag).textContent;
 
-const getPostsData = (nodeList, targetId, createNextPostId) => {
+const getPostsData = (nodeList, targetId) => {
   const arr = Array.from(nodeList);
   const data = arr.map((node) => {
     const getterOfDataFromNode = getterFromDocByTag(node);
@@ -10,7 +10,6 @@ const getPostsData = (nodeList, targetId, createNextPostId) => {
     const link = getterOfDataFromNode('link');
     const pubDate = getterOfDataFromNode('pubDate');
     return {
-      id: createNextPostId(),
       feedId: targetId,
       title,
       description,
@@ -21,7 +20,7 @@ const getPostsData = (nodeList, targetId, createNextPostId) => {
   return data;
 };
 
-export default (string, feedId, createNextPostId) => {
+export default (string, feedId) => {
   const documentFromData = parser.parseFromString(string, 'application/xml');
   const parserErrorElement = documentFromData.querySelector('parsererror');
   if (parserErrorElement) {
@@ -31,7 +30,7 @@ export default (string, feedId, createNextPostId) => {
   const title = get('title');
   const description = get('description');
   const posts = documentFromData.querySelectorAll('item');
-  const postsData = getPostsData(posts, feedId, createNextPostId);
+  const postsData = getPostsData(posts, feedId);
   return {
     feed: {
       title,
