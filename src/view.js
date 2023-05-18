@@ -1,5 +1,3 @@
-import onChange from 'on-change';
-
 const renderFormMessage = (container, messageInfo, i18n) => {
   const { key: messageKey, type: messageType = 'danger' } = messageInfo;
   container.innerHTML = '';
@@ -37,7 +35,14 @@ const renderFeeds = (container, feeds, i18n) => {
   container.appendChild(ul);
 };
 
-const renderPosts = (container, posts, i18n) => {
+// const renderModal = (container, { title, description, link }) => {
+//   const header = container.querySelector('.modal-title');
+//   header.textContent = title;
+//   const modalBody = container.querySelector('.modal-body');
+//   modalBody.innerHTML = `<p>${description}</p>`;
+// };
+
+const renderPosts = (container, posts, i18n, watchedState) => {
   container.innerHTML = '';
   const sortedPosts = posts.sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
@@ -47,6 +52,7 @@ const renderPosts = (container, posts, i18n) => {
     title,
     link,
     id,
+    description,
   }) => {
     const li = document.createElement('LI');
     li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -75,57 +81,8 @@ const renderPosts = (container, posts, i18n) => {
   container.appendChild(ul);
 };
 
-export default (state, i18nInstance) => onChange(state, (path, value) => {
-  const form = document.querySelector('.rss-form');
-  const input = form.querySelector('#url-input');
-  const messageElement = document.querySelector('.feedback');
-  const button = form.querySelector('[type=submit]');
-  const feeds = document.querySelector('.feeds');
-  const posts = document.querySelector('.posts');
-
-  if (path.startsWith('form.message')) {
-    renderFormMessage(messageElement, value, i18nInstance);
-  }
-
-  if (path.startsWith('data')) {
-    input.classList.remove('is-invalid');
-    form.reset();
-    input.focus();
-  }
-
-  if (path === 'form.status') {
-    switch (value) {
-      case 'invalid':
-        input.classList.add('is-invalid');
-        break;
-      case 'updated':
-        button.classList.remove('disabled');
-        break;
-      default:
-        throw new Error(`Unexpected form status: ${value}`);
-    }
-  }
-  if (path === 'fetch') {
-    switch (value) {
-      case 'filling':
-        button.classList.add('disabled');
-        break;
-      case 'filled':
-        button.classList.remove('disabled');
-        break;
-      case 'failed':
-        button.classList.remove('disabled');
-        break;
-      default:
-        throw new Error(`Unexpected fetch status: ${value}`);
-    }
-  }
-
-  if (path.startsWith('data.feeds')) {
-    renderFeeds(feeds, state.data.feeds, i18nInstance);
-  }
-
-  if (path.startsWith('data.posts')) {
-    renderPosts(posts, state.data.posts, i18nInstance);
-  }
-});
+export default {
+  formMessage: renderFormMessage,
+  feeds: renderFeeds,
+  posts: renderPosts,
+};

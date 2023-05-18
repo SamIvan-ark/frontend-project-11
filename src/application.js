@@ -1,15 +1,20 @@
 import './styles/style.css';
-import 'bootstrap/dist/css/bootstrap.css';
+import * as bootstrap from 'bootstrap';
+import onChange from 'on-change';
 import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
-import makeWatchedState from './view.js';
 import ru from './assets/locales/index.js';
 import makeUniqueIdGenerator from './assets/helpers/uniqueIdGenerator.js';
 import parseRss from './assets/helpers/parser.js';
+import render from './view.js';
 
 const getNextUniqueFeedId = makeUniqueIdGenerator();
 const getNextUniquePostId = makeUniqueIdGenerator();
+
+const routes = {
+  requestPath: (link) => `https://allorigins.hexlet.app/get?disableCache=true&url=${link}`,
+};
 
 const i18nInstance = i18next.createInstance();
 i18nInstance.init({
@@ -41,17 +46,83 @@ const state = {
     feeds: [],
     posts: [],
   },
+  ui: {
+    modal: {
+      status: 'hidden',
+      post: '',
+    },
+    viewedPosts: [],
+  },
 };
 
-const watchedState = makeWatchedState(state, i18nInstance);
+const watchedState = onChange(state, (path, value) => {
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('#url-input'),
+    messageElement: document.querySelector('.feedback'),
+    button: document.querySelector('[type=submit]'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
+    modal: document.querySelector('#modal'),
+  };
+
+  if (path.startsWith('form.message')) {
+    render.formMessage(elements.messageElement, value, i18nInstance);
+  }
+
+  if (path.startsWith('data')) {
+    elements.input.classList.remove('is-invalid');
+    elements.form.reset();
+    elements.input.focus();
+  }
+
+  if (path === 'form.status') {
+    switch (value) {
+      case 'invalid':
+        elements.input.classList.add('is-invalid');
+        break;
+      case 'updated':
+        elements.button.classList.remove('disabled');
+        break;
+      default:
+        throw new Error(`Unexpected form status: ${value}`);
+    }
+  }
+  if (path === 'fetch') {
+    switch (value) {
+      case 'filling':
+        elements.button.classList.add('disabled');
+        break;
+      case 'filled':
+        elements.button.classList.remove('disabled');
+        break;
+      case 'failed':
+        elements.button.classList.remove('disabled');
+        break;
+      default:
+        throw new Error(`Unexpected fetch status: ${value}`);
+    }
+  }
+
+  if (path.startsWith('data.feeds')) {
+    render.feeds(elements.feeds, state.data.feeds, i18nInstance);
+  }
+
+  if (path.startsWith('data.posts')) {
+    render.posts(elements.posts, state.data.posts, i18nInstance, watchedState);
+  }
+
+  if (path.startsWith('ui.modal')) {
+    // render.modal(elements.modal, value);
+  }
+});
 
 const buildSchema = (feeds) => yup
   .string()
   .url()
   .notOneOf(feeds.map(({ link }) => link));
 
-const fetchFeed = ({ link }) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`);
-
+const fetchFeed = ({ link }) => axios.get(routes.requestPath(link));
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
@@ -66,7 +137,7 @@ export default () => {
     validationResult
       .then((link) => {
         watchedState.fetch = 'filling';
-        return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${link}`);
+        return axios.get(routes.requestPath(link));
       })
       .then((responce) => responce.data.contents)
       .then((rawData) => {
@@ -119,16 +190,18 @@ export default () => {
 
   const delayFunctionExecuteRepeat = (fetch) => {
     if (state.data.feeds.length > 0) {
-      state.data.feeds.forEach((feed, id) => {
-        fetch(feed)
-          .then((responce) => parseRss(responce.data.contents, id))
-          .then(({ posts }) => posts)
-          .then((newPosts) => {
+      const promises = state.data.feeds.map((feed) => fetch(feed));
+
+      Promise.all(promises)
+        .then((responces) => responces.map((responce, id) => parseRss(responce.data.contents, id)))
+        .then((parsedResponces) => parsedResponces.map(({ posts }) => posts))
+        .then((actualPostsInAllFeeds) => {
+          actualPostsInAllFeeds.forEach((actualPostsInFeed) => {
             const knownPostsLinks = state.data.posts.map((post) => post.link);
-            const filteredNewPosts = newPosts
+            const newPosts = actualPostsInFeed
               .filter(({ link }) => !knownPostsLinks.includes(link));
-            if (filteredNewPosts.length > 0) {
-              const postsDataWithIds = filteredNewPosts.map((post) => {
+            if (newPosts.length > 0) {
+              const postsDataWithIds = newPosts.map((post) => {
                 const postId = getNextUniquePostId();
                 return {
                   ...post,
@@ -138,12 +211,18 @@ export default () => {
               });
               watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
             }
-          })
-          .catch((err) => console.log(err));
-      });
+          });
+        })
+        .then(() => {
+          setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+        })
+        .catch((err) => {
+          console.log(err);
+          setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+        });
+    } else {
+      setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
     }
-    setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
   };
-
   delayFunctionExecuteRepeat(fetchFeed);
 };
