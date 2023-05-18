@@ -1,5 +1,5 @@
 import './styles/style.css';
-import * as bootstrap from 'bootstrap';
+import 'bootstrap';
 import onChange from 'on-change';
 import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
@@ -48,8 +48,7 @@ const state = {
   },
   ui: {
     modal: {
-      status: 'hidden',
-      post: '',
+      postId: '',
     },
     viewedPosts: [],
   },
@@ -70,12 +69,6 @@ const watchedState = onChange(state, (path, value) => {
     render.formMessage(elements.messageElement, value, i18nInstance);
   }
 
-  if (path.startsWith('data')) {
-    elements.input.classList.remove('is-invalid');
-    elements.form.reset();
-    elements.input.focus();
-  }
-
   if (path === 'form.status') {
     switch (value) {
       case 'invalid':
@@ -83,6 +76,11 @@ const watchedState = onChange(state, (path, value) => {
         break;
       case 'updated':
         elements.button.classList.remove('disabled');
+        elements.input.classList.remove('is-invalid');
+        elements.form.reset();
+        elements.input.focus();
+        break;
+      case '':
         break;
       default:
         throw new Error(`Unexpected form status: ${value}`);
@@ -105,15 +103,18 @@ const watchedState = onChange(state, (path, value) => {
   }
 
   if (path.startsWith('data.feeds')) {
-    render.feeds(elements.feeds, state.data.feeds, i18nInstance);
+    render.feeds(elements.feeds, watchedState.data.feeds, i18nInstance);
   }
 
   if (path.startsWith('data.posts')) {
-    render.posts(elements.posts, state.data.posts, i18nInstance, watchedState);
+    render.posts(elements.posts, watchedState, i18nInstance);
   }
 
   if (path.startsWith('ui.modal')) {
-    // render.modal(elements.modal, value);
+    render.modal(elements.modal, value, watchedState);
+  }
+  if (path.startsWith('ui.viewedPosts')) {
+    render.viewedPosts(elements.posts, watchedState.ui.viewedPosts);
   }
 });
 
@@ -127,6 +128,7 @@ const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
   const form = document.querySelector('.rss-form');
+  const modalEl = document.querySelector('#modal');
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -161,6 +163,7 @@ export default () => {
         const fullFeedData = { link: newLink, ...feed };
         watchedState.data.feeds[newFeedId] = fullFeedData;
         watchedState.data.posts = [...state.data.posts, ...posts];
+        watchedState.form.status = '';
         watchedState.form.status = 'updated';
         watchedState.form.message = { key: 'form.messages.success', type: 'success' };
       })
@@ -188,13 +191,19 @@ export default () => {
       });
   });
 
+  modalEl.addEventListener('show.bs.modal', (e) => {
+    const postId = e.relatedTarget.dataset.id;
+    watchedState.ui.modal.postId = postId;
+    watchedState.ui.viewedPosts.push(Number(postId));
+  });
+
   const delayFunctionExecuteRepeat = (fetch) => {
     if (state.data.feeds.length > 0) {
       const promises = state.data.feeds.map((feed) => fetch(feed));
 
       Promise.all(promises)
         .then((responces) => responces.map((responce, id) => parseRss(responce.data.contents, id)))
-        .then((parsedResponces) => parsedResponces.map(({ posts }) => posts))
+        .then((parsedResponces) => parsedResponces.map((data) => data.posts))
         .then((actualPostsInAllFeeds) => {
           actualPostsInAllFeeds.forEach((actualPostsInFeed) => {
             const knownPostsLinks = state.data.posts.map((post) => post.link);

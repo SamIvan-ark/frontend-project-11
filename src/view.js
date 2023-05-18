@@ -35,16 +35,41 @@ const renderFeeds = (container, feeds, i18n) => {
   container.appendChild(ul);
 };
 
-// const renderModal = (container, { title, description, link }) => {
-//   const header = container.querySelector('.modal-title');
-//   header.textContent = title;
-//   const modalBody = container.querySelector('.modal-body');
-//   modalBody.innerHTML = `<p>${description}</p>`;
-// };
+const renderModal = (container, id, state) => {
+  const { title, description, link } = state
+    .data
+    .posts
+    .filter((post) => Number(post.id) === Number(id))[0];
+  const header = container.querySelector('.modal-title');
+  header.textContent = title;
 
-const renderPosts = (container, posts, i18n, watchedState) => {
+  const modalBody = container.querySelector('.modal-body');
+  modalBody.innerHTML = `<p>${description}</p>`;
+
+  const readMoreButton = container.querySelector('.modal-footer > a');
+  readMoreButton.setAttribute('href', link);
+};
+
+const renderViewedPosts = (container, list) => {
+  const renderedPosts = container.getElementsByTagName('LI');
+  const viewedPosts = Array.from(renderedPosts).filter((post) => {
+    const currentId = Number(post.querySelector('A').dataset.id);
+    return list.includes(currentId);
+  });
+
+  viewedPosts.forEach((post) => {
+    const titleElement = post.querySelector('A');
+    titleElement.classList.remove('fw-bold');
+    titleElement.classList.add('fw-normal', 'link-secondary');
+  });
+};
+
+const renderPosts = (container, state, i18n) => {
   container.innerHTML = '';
-  const sortedPosts = posts.sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
+  const sortedPosts = state
+    .data
+    .posts
+    .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
   const { wrapper, ul } = generateContentWrapper(i18n.t('content.posts.title'));
 
@@ -52,7 +77,6 @@ const renderPosts = (container, posts, i18n, watchedState) => {
     title,
     link,
     id,
-    description,
   }) => {
     const li = document.createElement('LI');
     li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -63,6 +87,9 @@ const renderPosts = (container, posts, i18n, watchedState) => {
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener noreffer');
     a.textContent = title;
+    a.addEventListener('click', () => {
+      state.ui.viewedPosts.push(Number(id));
+    });
 
     const button = document.createElement('BUTTON');
     button.setAttribute('type', 'button');
@@ -79,10 +106,14 @@ const renderPosts = (container, posts, i18n, watchedState) => {
 
   container.appendChild(wrapper);
   container.appendChild(ul);
+
+  renderViewedPosts(container, state.ui.viewedPosts);
 };
 
 export default {
   formMessage: renderFormMessage,
   feeds: renderFeeds,
   posts: renderPosts,
+  modal: renderModal,
+  viewedPosts: renderViewedPosts,
 };
