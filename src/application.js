@@ -13,7 +13,7 @@ const getNextUniqueFeedId = makeUniqueIdGenerator();
 const getNextUniquePostId = makeUniqueIdGenerator();
 
 const routes = {
-  requestPath: (link) => `https://allorigins.hexlet.app/get?disableCache=true&url=${link}`,
+  pathForRequest: (link) => `https://allorigins.hexlet.app/get?disableCache=true&url=${link}`,
 };
 
 const i18nInstance = i18next.createInstance();
@@ -123,7 +123,7 @@ const buildSchema = (feeds) => yup
   .url()
   .notOneOf(feeds.map(({ link }) => link));
 
-const fetchFeed = ({ link }) => axios.get(routes.requestPath(link));
+const fetchFeed = ({ link }) => axios.get(routes.pathForRequest(link));
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
@@ -139,12 +139,17 @@ export default () => {
     validationResult
       .then((link) => {
         watchedState.fetch = 'filling';
-        return axios.get(routes.requestPath(link));
+        return axios.get(routes.pathForRequest(link));
       })
-      .then((responce) => responce.data.contents)
+      .then((responce) => {
+        if (String(responce.data.status.http_code).startsWith('4')) {
+          throw new AxiosError('form.messages.errors.network');
+        }
+        return responce.data.contents;
+      })
       .then((rawData) => {
         if (rawData === '') {
-          throw new AxiosError('form.messages.errors.noRss');
+          throw new AxiosError('form.messages.errors.empty');
         }
         watchedState.fetch = 'filled';
         const parsedRss = parseRss(rawData, newFeedId);

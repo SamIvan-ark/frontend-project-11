@@ -10,6 +10,8 @@ export default {
           invalid: 'Ссылка должна быть валидным URL',
           nonUnique: 'RSS уже существует',
           noRss: 'Ресурс не содержит валидный RSS',
+          empty: 'Не должно быть пустым',
+          network: 'Ошибка сети',
         },
         success: 'RSS успешно загружен',
       },
