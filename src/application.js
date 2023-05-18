@@ -141,12 +141,7 @@ export default () => {
         watchedState.fetch = 'filling';
         return axios.get(routes.pathForRequest(link));
       })
-      .then((responce) => {
-        if (String(responce.data.status.http_code).startsWith('4')) {
-          throw new AxiosError('form.messages.errors.network');
-        }
-        return responce.data.contents;
-      })
+      .then((responce) => responce.data.contents)
       .then((rawData) => {
         if (rawData === '') {
           throw new AxiosError('form.messages.errors.empty');
