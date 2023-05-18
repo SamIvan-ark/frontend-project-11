@@ -174,6 +174,11 @@ export default () => {
             watchedState.form.message = { key: err.message };
             break;
           case 'AxiosError':
+            if (err.code === 'ERR_NETWORK') {
+              watchedState.fetch = 'failed';
+              watchedState.form.message = { key: 'form.messages.errors.network' };
+              break;
+            }
             watchedState.fetch = 'failed';
             watchedState.form.message = { key: err.message };
             break;
