@@ -191,6 +191,8 @@ export default () => {
               throw err;
             }
           default:
+            watchedState.fetch = 'failed';
+            watchedState.form.message = { key: err.message };
             console.log(err, JSON.stringify(err));
         }
       });

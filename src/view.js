@@ -66,9 +66,8 @@ const renderViewedPosts = (container, list) => {
 
 const renderPosts = (container, state, i18n) => {
   container.innerHTML = '';
-  const sortedPosts = state
-    .data
-    .posts
+  const cloneOfPosts = [].concat(state.data.posts);
+  const sortedPosts = cloneOfPosts
     .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
   const { wrapper, ul } = generateContentWrapper(i18n.t('content.posts.title'));
