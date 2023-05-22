@@ -4,10 +4,10 @@ import onChange from 'on-change';
 import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
-import ru from './assets/locales/index.js';
-import makeUniqueIdGenerator from './assets/helpers/uniqueIdGenerator.js';
-import parseRss from './assets/helpers/parser.js';
-import render from './view.js';
+import ru from './assets/locales/index';
+import makeUniqueIdGenerator from './assets/helpers/uniqueIdGenerator';
+import parseRss from './assets/helpers/parser';
+import render from './view';
 
 const getNextUniqueFeedId = makeUniqueIdGenerator();
 const getNextUniquePostId = makeUniqueIdGenerator();
@@ -16,14 +16,6 @@ const routes = {
   pathForRequest: (link) => `https://allorigins.hexlet.app/get?disableCache=true&url=${link}`,
 };
 
-const i18nInstance = i18next.createInstance();
-i18nInstance.init({
-  fallbackLng: 'ru',
-  resources: {
-    ru,
-  },
-});
-
 yup.setLocale({
   string: {
     url: 'form.messages.errors.invalid',
@@ -31,91 +23,6 @@ yup.setLocale({
   mixed: {
     notOneOf: 'form.messages.errors.nonUnique',
   },
-});
-
-const state = {
-  form: {
-    status: 'idle',
-    message: {
-      key: '',
-      type: '',
-    },
-  },
-  fetch: '',
-  data: {
-    feeds: [],
-    posts: [],
-  },
-  ui: {
-    modal: {
-      postId: '',
-    },
-    viewedPosts: [],
-  },
-};
-
-const watchedState = onChange(state, (path, value) => {
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    input: document.querySelector('#url-input'),
-    messageElement: document.querySelector('.feedback'),
-    button: document.querySelector('[type=submit]'),
-    feeds: document.querySelector('.feeds'),
-    posts: document.querySelector('.posts'),
-    modal: document.querySelector('#modal'),
-  };
-
-  if (path.startsWith('form.message')) {
-    render.formMessage(elements.messageElement, value, i18nInstance);
-  }
-
-  if (path === 'form.status') {
-    switch (value) {
-      case 'invalid':
-        elements.input.classList.add('is-invalid');
-        break;
-      case 'updated':
-        elements.button.classList.remove('disabled');
-        elements.input.classList.remove('is-invalid');
-        elements.form.reset();
-        elements.input.focus();
-        break;
-      case '':
-        break;
-      default:
-        throw new Error(`Unexpected form status: ${value}`);
-    }
-  }
-  if (path === 'fetch') {
-    switch (value) {
-      case 'filling':
-        elements.button.classList.add('disabled');
-        break;
-      case 'filled':
-        elements.button.classList.remove('disabled');
-        break;
-      case 'failed':
-        elements.button.classList.remove('disabled');
-        break;
-      default:
-        throw new Error(`Unexpected fetch status: ${value}`);
-    }
-  }
-
-  if (path.startsWith('data.feeds')) {
-    render.feeds(elements.feeds, watchedState.data.feeds, i18nInstance);
-  }
-
-  if (path.startsWith('data.posts')) {
-    render.posts(elements.posts, watchedState, i18nInstance);
-  }
-
-  if (path.startsWith('ui.modal')) {
-    render.modal(elements.modal, value, watchedState);
-  }
-  if (path.startsWith('ui.viewedPosts')) {
-    render.viewedPosts(elements.posts, watchedState.ui.viewedPosts);
-  }
 });
 
 const buildSchema = (feeds) => yup
@@ -127,10 +34,110 @@ const fetchFeed = ({ link }) => axios.get(routes.pathForRequest(link));
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
-  const form = document.querySelector('.rss-form');
-  const modalEl = document.querySelector('#modal');
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('#url-input'),
+    messageElement: document.querySelector('.feedback'),
+    button: document.querySelector('[type=submit]'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
+    modal: document.querySelector('#modal'),
+  };
 
-  form.addEventListener('submit', (e) => {
+  const i18nInstance = i18next.createInstance();
+  i18nInstance.init({
+    fallbackLng: 'ru',
+    resources: {
+      ru,
+    },
+  });
+
+  const state = {
+    form: {
+      status: 'idle',
+      message: {
+        key: null,
+        type: null,
+      },
+    },
+    fetch: {
+      status: null,
+      message: {
+        key: null,
+      },
+    },
+    data: {
+      feeds: [],
+      posts: [],
+    },
+    ui: {
+      modal: {
+        postId: null,
+      },
+      viewedPosts: [],
+    },
+  };
+
+  const watchedState = onChange(state, (path, value) => {
+    if (path.startsWith('form.message')) {
+      render.formMessage(elements, value, i18nInstance);
+    }
+
+    if (path.startsWith('fetch.message')) {
+      render.formMessage(elements, { key: value }, i18nInstance);
+    }
+
+    if (path === 'form.status') {
+      switch (value) {
+        case 'invalid':
+          elements.input.classList.add('is-invalid');
+          break;
+        case 'updated':
+          elements.button.classList.remove('disabled');
+          elements.input.classList.remove('is-invalid');
+          elements.form.reset();
+          elements.input.focus();
+          break;
+        case '':
+          break;
+        default:
+          throw new Error(`Unexpected form status: ${value}`);
+      }
+    }
+    if (path === 'fetch.status') {
+      switch (value) {
+        case 'filling':
+          elements.button.classList.add('disabled');
+          break;
+        case 'filled':
+          elements.button.classList.remove('disabled');
+          break;
+        case 'failed':
+          elements.button.classList.remove('disabled');
+          break;
+        default:
+          throw new Error(`Unexpected fetch status: ${value}`);
+      }
+    }
+
+    if (path.startsWith('data.feeds')) {
+      render.feeds(elements, watchedState.data.feeds, i18nInstance);
+    }
+
+    if (path.startsWith('data.posts')) {
+      render.posts(elements, watchedState, i18nInstance);
+    }
+
+    if (path.startsWith('ui.modal')) {
+      render.modal(elements, value, watchedState);
+    }
+
+    if (path.startsWith('ui.viewedPosts')) {
+      render.viewedPosts(elements, watchedState.ui.viewedPosts);
+    }
+  });
+
+  elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
     const newLink = data.get('url').trim();
@@ -138,15 +145,17 @@ export default () => {
     const newFeedId = getNextUniqueFeedId();
     validationResult
       .then((link) => {
-        watchedState.fetch = 'filling';
+        watchedState.fetch.status = 'filling';
         return axios.get(routes.pathForRequest(link));
       })
-      .then((responce) => responce.data.contents)
-      .then((rawData) => {
-        if (rawData === '') {
-          throw new AxiosError('form.messages.errors.empty');
+      .then((responce) => {
+        if (responce.data.contents === '') {
+          throw new AxiosError('form.messages.errors.noRss');
         }
-        watchedState.fetch = 'filled';
+        return responce.data.contents;
+      })
+      .then((rawData) => {
+        watchedState.fetch.status = 'filled';
         const parsedRss = parseRss(rawData, newFeedId);
         const postsDataWithIds = parsedRss.posts.map((post) => {
           const postId = getNextUniquePostId();
@@ -175,30 +184,32 @@ export default () => {
             break;
           case 'AxiosError':
             if (err.code === 'ERR_NETWORK') {
-              watchedState.fetch = 'failed';
-              watchedState.form.message = { key: 'form.messages.errors.network' };
+              watchedState.fetch.status = 'failed';
+              watchedState.fetch.message.key = 'form.messages.errors.network';
               break;
             }
-            watchedState.fetch = 'failed';
-            watchedState.form.message = { key: err.message };
+            watchedState.fetch.status = 'failed';
+            watchedState.fetch.message.key = 'form.messages.errors.noRss';
             break;
           case 'SyntaxError':
             if (err.message.endsWith('noRss')) {
-              watchedState.fetch = 'failed';
-              watchedState.form.message = { key: err.message };
+              watchedState.fetch.status = 'failed';
+              watchedState.fetch.message.key = 'form.messages.errors.noRss';
               break;
             } else {
               throw err;
             }
           default:
-            watchedState.fetch = 'failed';
-            watchedState.form.message = { key: err.message };
+            watchedState.fetch = {
+              status: 'failed',
+              message: err.message,
+            };
             console.log(err, JSON.stringify(err));
         }
       });
   });
 
-  modalEl.addEventListener('show.bs.modal', (e) => {
+  elements.modal.addEventListener('show.bs.modal', (e) => {
     const postId = e.relatedTarget.dataset.id;
     watchedState.ui.modal.postId = postId;
     watchedState.ui.viewedPosts.push(Number(postId));

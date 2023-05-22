@@ -1,13 +1,3 @@
-const renderFormMessage = (container, messageInfo, i18n) => {
-  const { key: messageKey, type: messageType = 'danger' } = messageInfo;
-  container.innerHTML = '';
-  container.classList.remove('text-success');
-  container.classList.remove('text-danger');
-  container.classList.add(`text-${messageType}`);
-
-  container.textContent = i18n.t(messageKey);
-};
-
 const generateContentWrapper = (title) => {
   const wrapper = document.createElement('DIV');
   wrapper.classList.add('card', 'border-0');
@@ -19,11 +9,23 @@ const generateContentWrapper = (title) => {
   return { wrapper, ul };
 };
 
-const renderFeeds = (container, feeds, i18n) => {
-  container.innerHTML = '';
+const renderFormMessage = (elements, messageInfo, i18n) => {
+  const { key: messageKey, type: messageType = 'danger' } = messageInfo;
+  const { messageElement } = elements;
+  messageElement.innerHTML = '';
+  messageElement.classList.remove('text-success');
+  messageElement.classList.remove('text-danger');
+  messageElement.classList.add(`text-${messageType}`);
+
+  messageElement.textContent = i18n.t(messageKey);
+};
+
+const renderFeeds = (elements, feedsData, i18n) => {
+  const { feeds } = elements;
+  feeds.innerHTML = '';
 
   const { wrapper, ul } = generateContentWrapper(i18n.t('content.feeds.title'));
-  feeds.forEach(({ title, description }) => {
+  feedsData.forEach(({ title, description }) => {
     const li = document.createElement('LI');
     li.classList.add('list-group-item', 'border-0', 'border-end-0');
 
@@ -31,27 +33,29 @@ const renderFeeds = (container, feeds, i18n) => {
     ul.appendChild(li);
   });
 
-  container.appendChild(wrapper);
-  container.appendChild(ul);
+  feeds.appendChild(wrapper);
+  feeds.appendChild(ul);
 };
 
-const renderModal = (container, id, state) => {
+const renderModal = (elements, id, state) => {
   const { title, description, link } = state
     .data
     .posts
     .filter((post) => Number(post.id) === Number(id))[0];
-  const header = container.querySelector('.modal-title');
+  const { modal } = elements;
+  const header = modal.querySelector('.modal-title');
   header.textContent = title;
 
-  const modalBody = container.querySelector('.modal-body');
+  const modalBody = modal.querySelector('.modal-body');
   modalBody.innerHTML = `<p>${description}</p>`;
 
-  const readMoreButton = container.querySelector('.modal-footer > a');
+  const readMoreButton = modal.querySelector('.modal-footer > a');
   readMoreButton.setAttribute('href', link);
 };
 
-const renderViewedPosts = (container, list) => {
-  const renderedPosts = container.getElementsByTagName('LI');
+const renderViewedPosts = (elements, list) => {
+  const { posts } = elements;
+  const renderedPosts = posts.getElementsByTagName('LI');
   const viewedPosts = Array.from(renderedPosts).filter((post) => {
     const currentId = Number(post.querySelector('A').dataset.id);
     return list.includes(currentId);
@@ -64,15 +68,16 @@ const renderViewedPosts = (container, list) => {
   });
 };
 
-const renderPosts = (container, state, i18n) => {
-  container.innerHTML = '';
-  const cloneOfPosts = [].concat(state.data.posts);
-  const sortedPosts = cloneOfPosts
+const renderPosts = (elements, state, i18n) => {
+  const { posts } = elements;
+  posts.innerHTML = '';
+  const cloneOfPostsData = [].concat(state.data.posts);
+  const sortedPostsData = cloneOfPostsData
     .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
   const { wrapper, ul } = generateContentWrapper(i18n.t('content.posts.title'));
 
-  sortedPosts.forEach(({
+  sortedPostsData.forEach(({
     title,
     link,
     id,
@@ -103,10 +108,10 @@ const renderPosts = (container, state, i18n) => {
     ul.appendChild(li);
   });
 
-  container.appendChild(wrapper);
-  container.appendChild(ul);
+  posts.appendChild(wrapper);
+  posts.appendChild(ul);
 
-  renderViewedPosts(container, state.ui.viewedPosts);
+  renderViewedPosts(elements, state.ui.viewedPosts);
 };
 
 export default {
