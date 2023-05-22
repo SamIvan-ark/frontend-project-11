@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
-import app from './application.js';
+import app from './application';
 
 app();
