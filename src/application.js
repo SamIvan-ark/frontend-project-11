@@ -224,9 +224,11 @@ export default () => {
     if (state.data.feeds.length > 0) {
       const promises = state.data.feeds.map((feed) => fetch(feed));
 
-      Promise.all(promises)
-        .then((responces) => responces.map((responce, id) => parseRss(responce.data.contents, id)))
-        .then((parsedResponces) => parsedResponces.map((data) => data.posts))
+      Promise.allSettled(promises)
+        .then((responces) => responces
+          .map((responce, id) => parseRss(responce.value.data.contents, id)))
+        .then((parsedResponces) => parsedResponces
+          .map((data) => data.posts))
         .then((actualPostsInAllFeeds) => {
           actualPostsInAllFeeds.forEach((actualPostsInFeed) => {
             const knownPostsLinks = state.data.posts.map((post) => post.link);
@@ -249,7 +251,7 @@ export default () => {
           setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
         })
         .catch((err) => {
-          console.log(err);
+          console.error(err);
           setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
         });
     } else {

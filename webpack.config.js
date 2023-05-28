@@ -10,18 +10,27 @@ export default {
     host: 'localhost',
   },
   mode: process.env.NODE_ENV || 'development',
+
   module: {
     rules: [
       {
-        test: /\.m?js/,
+        test: /\.js$/,
         type: 'javascript/auto',
-      },
-      {
-        test: /\.m?js/,
         resolve: {
+          extensions: ['.js'],
           fullySpecified: false,
         },
       },
+      // {
+      //   test: /\.m?js/,
+      //   type: 'javascript/auto',
+      // },
+      // {
+      //   test: /\.m?js/,
+      //   resolve: {
+      //     fullySpecified: false,
+      //   },
+      // },
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader', 'postcss-loader'],
