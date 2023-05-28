@@ -17,7 +17,41 @@ const renderFormMessage = (elements, messageInfo, i18n) => {
   messageElement.classList.remove('text-danger');
   messageElement.classList.add(`text-${messageType}`);
 
-  messageElement.textContent = i18n.t(messageKey);
+  messageElement.textContent = i18n.t(`form.messages.${messageKey}`);
+};
+
+const renderFormStatus = (elements, state) => {
+  switch (state.form.status) {
+    case 'invalid':
+      elements.input.classList.add('is-invalid');
+      break;
+    case 'updated':
+      elements.submitButton.classList.remove('disabled');
+      elements.input.classList.remove('is-invalid');
+      elements.form.reset();
+      elements.input.focus();
+      break;
+    case '':
+      break;
+    default:
+      throw new Error(`Unexpected form status: ${state.form.status}`);
+  }
+};
+
+const renderButtonStatus = (elements, state) => {
+  switch (state.fetch.status) {
+    case 'filling':
+      elements.submitButton.classList.add('disabled');
+      break;
+    case 'filled':
+      elements.submitButton.classList.remove('disabled');
+      break;
+    case 'failed':
+      elements.submitButton.classList.remove('disabled');
+      break;
+    default:
+      throw new Error(`Unexpected fetch status: ${state.fetch.status}`);
+  }
 };
 
 const renderFeeds = (elements, feedsData, i18n) => {
@@ -116,6 +150,8 @@ const renderPosts = (elements, state, i18n) => {
 
 export default {
   formMessage: renderFormMessage,
+  formStatus: renderFormStatus,
+  buttonStatus: renderButtonStatus,
   feeds: renderFeeds,
   posts: renderPosts,
   modal: renderModal,

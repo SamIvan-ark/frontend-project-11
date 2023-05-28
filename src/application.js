@@ -34,7 +34,7 @@ export default () => {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('#url-input'),
     messageElement: document.querySelector('.feedback'),
-    button: document.querySelector('[type=submit]'),
+    submitButton: document.querySelector('[type=submit]'),
     feeds: document.querySelector('.feeds'),
     posts: document.querySelector('.posts'),
     modal: document.querySelector('#modal'),
@@ -84,61 +84,34 @@ export default () => {
   };
 
   const watchedState = onChange(state, (path, value) => {
-    if (path.startsWith('form.message')) {
-      render.formMessage(elements, value, i18nInstance);
-    }
-
-    if (path.startsWith('fetch.message')) {
-      render.formMessage(elements, { key: value }, i18nInstance);
-    }
-
-    if (path === 'form.status') {
-      switch (value) {
-        case 'invalid':
-          elements.input.classList.add('is-invalid');
-          break;
-        case 'updated':
-          elements.button.classList.remove('disabled');
-          elements.input.classList.remove('is-invalid');
-          elements.form.reset();
-          elements.input.focus();
-          break;
-        case '':
-          break;
-        default:
-          throw new Error(`Unexpected form status: ${value}`);
-      }
-    }
-    if (path === 'fetch.status') {
-      switch (value) {
-        case 'filling':
-          elements.button.classList.add('disabled');
-          break;
-        case 'filled':
-          elements.button.classList.remove('disabled');
-          break;
-        case 'failed':
-          elements.button.classList.remove('disabled');
-          break;
-        default:
-          throw new Error(`Unexpected fetch status: ${value}`);
-      }
-    }
-
-    if (path.startsWith('data.feeds')) {
-      render.feeds(elements, watchedState.data.feeds, i18nInstance);
-    }
-
-    if (path.startsWith('data.posts')) {
-      render.posts(elements, watchedState, i18nInstance);
-    }
-
-    if (path.startsWith('ui.modal')) {
-      render.modal(elements, value, watchedState);
-    }
-
-    if (path.startsWith('ui.viewedPosts')) {
-      render.viewedPosts(elements, watchedState.ui.viewedPosts);
+    switch (path) {
+      case 'form.message':
+        render.formMessage(elements, value, i18nInstance);
+        break;
+      case 'fetch.message.key':
+        render.formMessage(elements, { key: value }, i18nInstance);
+        break;
+      case 'form.status':
+        render.formStatus(elements, state);
+        break;
+      case 'fetch.status':
+        render.buttonStatus(elements, state);
+        break;
+      case 'data.feeds':
+        render.feeds(elements, watchedState.data.feeds, i18nInstance); // вынести на уровень повыше
+        break;
+      case 'data.posts':
+        render.posts(elements, watchedState, i18nInstance);//          // вынести на уровень повыше
+        break;
+      case 'ui.modal.postId':
+        render.modal(elements, value, watchedState);
+        break;
+      case 'ui.viewedPosts':
+        render.viewedPosts(elements, watchedState.ui.viewedPosts);
+        break;
+      default:
+        console.error(`Unexpected state path: ${path}`);
+        break;
     }
   });
 
@@ -175,7 +148,7 @@ export default () => {
       })
       .then(({ feed, posts }) => {
         const fullFeedData = { link: newLink, ...feed };
-        watchedState.data.feeds[newFeedId] = fullFeedData;
+        watchedState.data.feeds = [...state.data.feeds, fullFeedData];
         watchedState.data.posts = [...state.data.posts, ...posts];
         watchedState.form.status = '';
         watchedState.form.status = 'updated';
