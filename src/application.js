@@ -13,17 +13,13 @@ const getNextUniqueFeedId = makeUniqueIdGenerator();
 const getNextUniquePostId = makeUniqueIdGenerator();
 
 const routes = {
-  pathForRequest: (link) => `https://allorigins.hexlet.app/get?disableCache=true&url=${link}`,
+  pathForRequest: (link) => {
+    const url = new URL('https://allorigins.hexlet.app/get');
+    url.searchParams.set('disableCache', true);
+    url.searchParams.set('url', link);
+    return url;
+  },
 };
-
-yup.setLocale({
-  string: {
-    url: 'form.messages.errors.invalid',
-  },
-  mixed: {
-    notOneOf: 'form.messages.errors.nonUnique',
-  },
-});
 
 const buildSchema = (feeds) => yup
   .string()
@@ -49,6 +45,15 @@ export default () => {
     fallbackLng: 'ru',
     resources: {
       ru,
+    },
+  });
+
+  yup.setLocale({
+    string: {
+      url: 'errors.invalidUrl',
+    },
+    mixed: {
+      notOneOf: 'errors.nonUnique',
     },
   });
 
@@ -150,7 +155,7 @@ export default () => {
       })
       .then((responce) => {
         if (responce.data.contents === '') {
-          throw new AxiosError('form.messages.errors.noRss');
+          throw new AxiosError('errors.noRss');
         }
         return responce.data.contents;
       })
@@ -174,7 +179,7 @@ export default () => {
         watchedState.data.posts = [...state.data.posts, ...posts];
         watchedState.form.status = '';
         watchedState.form.status = 'updated';
-        watchedState.form.message = { key: 'form.messages.success', type: 'success' };
+        watchedState.form.message = { key: 'success', type: 'success' };
       })
       .catch((err) => {
         switch (err.name) {
@@ -185,16 +190,16 @@ export default () => {
           case 'AxiosError':
             if (err.code === 'ERR_NETWORK') {
               watchedState.fetch.status = 'failed';
-              watchedState.fetch.message.key = 'form.messages.errors.network';
+              watchedState.fetch.message.key = 'errors.network';
               break;
             }
             watchedState.fetch.status = 'failed';
-            watchedState.fetch.message.key = 'form.messages.errors.noRss';
+            watchedState.fetch.message.key = 'errors.noRss';
             break;
           case 'SyntaxError':
             if (err.message.endsWith('noRss')) {
               watchedState.fetch.status = 'failed';
-              watchedState.fetch.message.key = 'form.messages.errors.noRss';
+              watchedState.fetch.message.key = 'errors.noRss';
               break;
             } else {
               throw err;

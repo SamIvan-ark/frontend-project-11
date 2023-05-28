@@ -3,7 +3,7 @@ export default {
     form: {
       messages: {
         errors: {
-          invalid: 'Ссылка должна быть валидным URL',
+          invalidUrl: 'Ссылка должна быть валидным URL',
           nonUnique: 'RSS уже существует',
           noRss: 'Ресурс не содержит валидный RSS',
           network: 'Ошибка сети',
