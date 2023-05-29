@@ -26,7 +26,6 @@ const buildSchema = (feeds) => yup
   .url()
   .notOneOf(feeds.map(({ link }) => link));
 
-const fetchFeed = ({ link }) => axios.get(routes.pathForRequest(link));
 const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
@@ -201,8 +200,10 @@ export default () => {
     watchedState.ui.viewedPosts.push(Number(postId));
   });
 
-  const delayFunctionExecuteRepeat = (fetch) => {
-    const promises = state.data.feeds.map((feed) => fetch(feed));
+  const REFRESHING_DELAY_IN_MS = 5000;
+
+  const infiniteFeedsRefreshingWithDelay = () => {
+    const promises = state.data.feeds.map(({ link }) => axios.get(routes.pathForRequest(link)));
 
     Promise.allSettled(promises)
       .then((responces) => responces
@@ -232,8 +233,8 @@ export default () => {
         console.error(err);
       })
       .finally(() => {
-        setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+        setTimeout(infiniteFeedsRefreshingWithDelay, REFRESHING_DELAY_IN_MS);
       });
   };
-  delayFunctionExecuteRepeat(fetchFeed);
+  infiniteFeedsRefreshingWithDelay();
 };
