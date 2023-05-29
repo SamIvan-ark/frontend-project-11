@@ -202,8 +202,7 @@ export default () => {
   });
 
   const delayFunctionExecuteRepeat = (fetch) => {
-    if (state.data.feeds.length > 0) {
-      const promises = state.data.feeds.map((feed) => fetch(feed));
+    const promises = state.data.feeds.map((feed) => fetch(feed));
 
     Promise.allSettled(promises)
       .then((responces) => responces
@@ -228,9 +227,13 @@ export default () => {
             watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
           }
         });
-    } else {
-      setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
-    }
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+      });
   };
   delayFunctionExecuteRepeat(fetchFeed);
 };
