@@ -134,21 +134,29 @@ export default () => {
       })
       .then((rawData) => {
         watchedState.fetch.status = 'filled';
-        const parsedRss = parseRss(rawData, newFeedId);
-        const postsDataWithIds = parsedRss.posts.map((post) => {
-          const postId = getNextUniquePostId();
+        const { channel: { title, description, items } } = parseRss(rawData);
+        const fullPostsData = items.map((post) => {
+          const id = getNextUniquePostId();
           return {
             ...post,
-            id: postId,
+            id,
+            feedId: newFeedId,
             processedAt: Date.now(),
           };
         });
-        parsedRss.posts = postsDataWithIds;
-        return parsedRss;
+        const fullData = {
+          feed: {
+            link: newLink,
+            id: newFeedId,
+            title,
+            description,
+          },
+          posts: fullPostsData,
+        };
+        return fullData;
       })
       .then(({ feed, posts }) => {
-        const fullFeedData = { link: newLink, ...feed };
-        watchedState.data.feeds = [...state.data.feeds, fullFeedData];
+        watchedState.data.feeds = [...state.data.feeds, feed];
         watchedState.data.posts = [...state.data.posts, ...posts];
         watchedState.form.status = '';
         watchedState.form.status = 'updated';
@@ -197,35 +205,28 @@ export default () => {
     if (state.data.feeds.length > 0) {
       const promises = state.data.feeds.map((feed) => fetch(feed));
 
-      Promise.allSettled(promises)
-        .then((responces) => responces
-          .map((responce, id) => parseRss(responce.value.data.contents, id)))
-        .then((parsedResponces) => parsedResponces
-          .map((data) => data.posts))
-        .then((actualPostsInAllFeeds) => {
-          actualPostsInAllFeeds.forEach((actualPostsInFeed) => {
-            const knownPostsLinks = state.data.posts.map((post) => post.link);
-            const newPosts = actualPostsInFeed
-              .filter(({ link }) => !knownPostsLinks.includes(link));
-            if (newPosts.length > 0) {
-              const postsDataWithIds = newPosts.map((post) => {
-                const postId = getNextUniquePostId();
-                return {
-                  ...post,
-                  id: postId,
-                  processedAt: Date.now(),
-                };
-              });
-              watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
-            }
-          });
-        })
-        .then(() => {
-          setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
-        })
-        .catch((err) => {
-          console.error(err);
-          setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
+    Promise.allSettled(promises)
+      .then((responces) => responces
+        .map((responce) => parseRss(responce.value.data.contents)))
+      .then((parsedResponces) => parsedResponces
+        .map((data) => data.channel.items))
+      .then((actualPostsInAllFeeds) => {
+        actualPostsInAllFeeds.forEach((actualPostsInFeed, feedId) => {
+          const knownPostsLinks = state.data.posts.map((post) => post.link);
+          const newPosts = actualPostsInFeed
+            .filter(({ link }) => !knownPostsLinks.includes(link));
+          if (newPosts.length > 0) {
+            const postsDataWithIds = newPosts.map((post) => {
+              const id = getNextUniquePostId();
+              return {
+                ...post,
+                id,
+                feedId,
+                processedAt: Date.now(),
+              };
+            });
+            watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
+          }
         });
     } else {
       setTimeout(delayFunctionExecuteRepeat, 5000, fetch);
