@@ -71,11 +71,36 @@ const renderFeeds = (elements, feedsData, i18n) => {
   feeds.appendChild(ul);
 };
 
-const renderModal = (elements, id, state) => {
-  const { title, description, link } = state
-    .data
-    .posts
-    .filter((post) => Number(post.id) === Number(id))[0];
+const renderModal = (elements, modalStatus) => {
+  const { modal, body, backdrop } = elements;
+
+  switch (modalStatus) {
+    case 'hidden':
+      body.classList.remove('modal-open');
+      body.removeAttribute('style');
+      backdrop.classList.remove('modal-backdrop', 'show');
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      modal.removeAttribute('aria-modal');
+      modal.setAttribute('style', 'display: none');
+      break;
+    case 'shown':
+      body.classList.add('modal-open');
+      body.setAttribute('style', 'overflow: hidden, padding-right: 19px');
+      backdrop.classList.add('modal-backdrop', 'show');
+      modal.classList.add('show');
+      modal.removeAttribute('aria-hidden');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('style', 'display: block');
+      break;
+    default:
+      throw new Error(`unexpected modal status: ${modalStatus}`);
+  }
+};
+
+const renderModalContent = (elements, id, state) => {
+  const targetPost = state.posts.filter((post) => Number(post.id) === Number(id))[0];
+  const { title, description, link } = targetPost;
   const { modal } = elements;
   const header = modal.querySelector('.modal-title');
   header.textContent = title;
@@ -105,7 +130,7 @@ const renderViewedPosts = (elements, list) => {
 const renderPosts = (elements, state, i18n) => {
   const { posts } = elements;
   posts.innerHTML = '';
-  const cloneOfPostsData = [].concat(state.data.posts);
+  const cloneOfPostsData = [].concat(state.posts);
   const sortedPostsData = cloneOfPostsData
     .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
@@ -124,16 +149,13 @@ const renderPosts = (elements, state, i18n) => {
     a.setAttribute('href', link);
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener noreffer');
+    a.dataset.type = 'link';
     a.textContent = title;
-    a.addEventListener('click', () => {
-      state.ui.viewedPosts.push(Number(id));
-    });
 
     const button = document.createElement('BUTTON');
     button.setAttribute('type', 'button');
     button.dataset.id = id;
-    button.dataset.bsToggle = 'modal';
-    button.dataset.bsTarget = '#modal';
+    button.dataset.type = 'button';
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     button.textContent = i18n.t('content.posts.button');
 
@@ -155,5 +177,6 @@ export default {
   feeds: renderFeeds,
   posts: renderPosts,
   modal: renderModal,
+  modalContent: renderModalContent,
   viewedPosts: renderViewedPosts,
 };

@@ -1,5 +1,4 @@
 import './styles/style.css';
-import 'bootstrap';
 import onChange from 'on-change';
 import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
@@ -30,6 +29,7 @@ const validateLink = (link, schema) => schema.validate(link);
 
 export default () => {
   const elements = {
+    body: document.body,
     form: document.querySelector('.rss-form'),
     input: document.querySelector('#url-input'),
     messageElement: document.querySelector('.feedback'),
@@ -37,6 +37,7 @@ export default () => {
     feeds: document.querySelector('.feeds'),
     posts: document.querySelector('.posts'),
     modal: document.querySelector('#modal'),
+    backdrop: document.querySelector('#backdrop'),
   };
 
   const i18nInstance = i18next.createInstance();
@@ -70,12 +71,11 @@ export default () => {
         key: null,
       },
     },
-    data: {
-      feeds: [],
-      posts: [],
-    },
+    feeds: [],
+    posts: [],
     ui: {
       modal: {
+        status: 'hidden',
         postId: null,
       },
       viewedPosts: [],
@@ -96,29 +96,31 @@ export default () => {
       case 'fetch.status':
         render.buttonStatus(elements, state);
         break;
-      case 'data.feeds':
-        render.feeds(elements, watchedState.data.feeds, i18nInstance); // вынести на уровень повыше
+      case 'feeds':
+        render.feeds(elements, watchedState.feeds, i18nInstance);
         break;
-      case 'data.posts':
-        render.posts(elements, watchedState, i18nInstance);//          // вынести на уровень повыше
+      case 'posts':
+        render.posts(elements, watchedState, i18nInstance);
+        break;
+      case 'ui.modal.status':
+        render.modal(elements, value);
         break;
       case 'ui.modal.postId':
-        render.modal(elements, value, watchedState);
+        render.modalContent(elements, value, watchedState);
         break;
       case 'ui.viewedPosts':
         render.viewedPosts(elements, watchedState.ui.viewedPosts);
         break;
       default:
         console.error(`Unexpected state path: ${path}`);
-        break;
     }
   });
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const data = new FormData(e.target);
-    const newLink = data.get('url').trim();
-    const validationResult = validateLink(newLink, buildSchema(watchedState.data.feeds));
+    const formData = new FormData(e.target);
+    const newLink = formData.get('url').trim();
+    const validationResult = validateLink(newLink, buildSchema(watchedState.feeds));
     const newFeedId = getNextUniqueFeedId();
     validationResult
       .then((link) => {
@@ -155,8 +157,8 @@ export default () => {
         return fullData;
       })
       .then(({ feed, posts }) => {
-        watchedState.data.feeds = [...state.data.feeds, feed];
-        watchedState.data.posts = [...state.data.posts, ...posts];
+        watchedState.feeds = [...state.feeds, feed];
+        watchedState.posts = [...state.posts, ...posts];
         watchedState.form.status = '';
         watchedState.form.status = 'updated';
         watchedState.form.message = { key: 'success', type: 'success' };
@@ -177,33 +179,45 @@ export default () => {
             watchedState.fetch.message.key = 'errors.noRss';
             break;
           case 'SyntaxError':
-            if (err.message.endsWith('noRss')) {
+            if (err.message === 'errors.noRss') {
               watchedState.fetch.status = 'failed';
               watchedState.fetch.message.key = 'errors.noRss';
-              break;
             } else {
               throw err;
             }
+            break;
           default:
-            watchedState.fetch = {
-              status: 'failed',
-              message: err.message,
-            };
+            watchedState.fetch.status = 'failed';
+            watchedState.fetch.message.key = err.message;
             console.log(err, JSON.stringify(err));
         }
       });
   });
 
-  elements.modal.addEventListener('show.bs.modal', (e) => {
-    const postId = e.relatedTarget.dataset.id;
-    watchedState.ui.modal.postId = postId;
-    watchedState.ui.viewedPosts.push(Number(postId));
+  elements.posts.addEventListener('click', (e) => {
+    const { target } = e;
+    const { id, type: kindOfElement } = target.dataset;
+    if (kindOfElement === 'link' || kindOfElement === 'button') {
+      watchedState.ui.viewedPosts.push(Number(id));
+    }
+
+    if (target.dataset.type === 'button') {
+      watchedState.ui.modal.postId = id;
+      watchedState.ui.modal.status = 'shown';
+    }
+  });
+
+  elements.modal.addEventListener('click', (e) => {
+    const { target, target: { type } } = e;
+    if (type === 'button' || target === elements.modal) {
+      watchedState.ui.modal.status = 'hidden';
+    }
   });
 
   const REFRESHING_DELAY_IN_MS = 5000;
 
   const infiniteFeedsRefreshingWithDelay = () => {
-    const promises = state.data.feeds.map(({ link }) => axios.get(routes.pathForRequest(link)));
+    const promises = state.feeds.map(({ link }) => axios.get(routes.pathForRequest(link)));
 
     Promise.allSettled(promises)
       .then((responces) => responces
@@ -212,7 +226,7 @@ export default () => {
         .map((data) => data.channel.items))
       .then((actualPostsInAllFeeds) => {
         actualPostsInAllFeeds.forEach((actualPostsInFeed, feedId) => {
-          const knownPostsLinks = state.data.posts.map((post) => post.link);
+          const knownPostsLinks = state.posts.map((post) => post.link);
           const newPosts = actualPostsInFeed
             .filter(({ link }) => !knownPostsLinks.includes(link));
           if (newPosts.length > 0) {
@@ -225,7 +239,7 @@ export default () => {
                 processedAt: Date.now(),
               };
             });
-            watchedState.data.posts = [...state.data.posts, ...postsDataWithIds];
+            watchedState.posts = [...state.posts, ...postsDataWithIds];
           }
         });
       })
