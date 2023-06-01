@@ -1,4 +1,3 @@
-import './styles/style.css';
 import onChange from 'on-change';
 import axios, { AxiosError } from 'axios';
 import i18next from 'i18next';
