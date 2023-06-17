@@ -21,7 +21,7 @@ export default (string) => {
   const documentFromData = parser.parseFromString(string, 'application/xml');
   const parserErrorElement = documentFromData.querySelector('parsererror');
   if (parserErrorElement) {
-    throw new SyntaxError('errors.noRss');
+    throw new SyntaxError('noRss');
   }
   const get = getterFromDocByTag(documentFromData);
   const title = get('title');

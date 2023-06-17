@@ -9,15 +9,25 @@ const generateContentWrapper = (title) => {
   return { wrapper, ul };
 };
 
-const renderFormMessage = (elements, messageInfo, i18n) => {
-  const { key: messageKey, type: messageType = 'danger' } = messageInfo;
+const renderFormMessage = (elements, state, initiator, i18n) => {
+  const mapOfFromMessages = {
+    noRss: 'form.messages.errors.noRss',
+    noInternet: 'form.messages.errors.network',
+    nonUniqueUrl: 'form.messages.errors.nonUnique',
+    invalidUrl: 'form.messages.errors.invalidUrl',
+    success: 'form.messages.success',
+  };
+  const { error } = state[initiator];
+  const messageType = (initiator === 'fetch' && error === null) ? 'success' : 'danger';
+  const messageKey = error ?? 'success';
   const { messageElement } = elements;
+
   messageElement.innerHTML = '';
   messageElement.classList.remove('text-success');
   messageElement.classList.remove('text-danger');
   messageElement.classList.add(`text-${messageType}`);
 
-  messageElement.textContent = i18n.t(`form.messages.${messageKey}`);
+  messageElement.textContent = i18n(mapOfFromMessages[messageKey]);
 };
 
 const renderFormStatus = (elements, state) => {
@@ -25,13 +35,14 @@ const renderFormStatus = (elements, state) => {
     case 'invalid':
       elements.input.classList.add('is-invalid');
       break;
-    case 'updated':
-      elements.submitButton.classList.remove('disabled');
-      elements.input.classList.remove('is-invalid');
+    case 'dropped':
       elements.form.reset();
       elements.input.focus();
       break;
-    case '':
+    case 'filling':
+      break;
+    case 'valid':
+      elements.input.classList.remove('is-invalid');
       break;
     default:
       throw new Error(`Unexpected form status: ${state.form.status}`);
@@ -40,25 +51,28 @@ const renderFormStatus = (elements, state) => {
 
 const renderButtonStatus = (elements, state) => {
   switch (state.fetch.status) {
-    case 'filling':
+    case 'loading':
       elements.submitButton.classList.add('disabled');
       break;
-    case 'filled':
+    case 'successfully':
       elements.submitButton.classList.remove('disabled');
       break;
     case 'failed':
       elements.submitButton.classList.remove('disabled');
+      break;
+    case 'waiting':
       break;
     default:
       throw new Error(`Unexpected fetch status: ${state.fetch.status}`);
   }
 };
 
-const renderFeeds = (elements, feedsData, i18n) => {
-  const { feeds } = elements;
-  feeds.innerHTML = '';
+const renderFeeds = (elements, state, i18n) => {
+  const { feeds: feedsData } = state;
+  const { feeds: feedsWrapper } = elements;
+  feedsWrapper.innerHTML = '';
 
-  const { wrapper, ul } = generateContentWrapper(i18n.t('content.feeds.title'));
+  const { wrapper, ul } = generateContentWrapper(i18n('content.feeds.title'));
   feedsData.forEach(({ title, description }) => {
     const li = document.createElement('LI');
     li.classList.add('list-group-item', 'border-0', 'border-end-0');
@@ -67,8 +81,8 @@ const renderFeeds = (elements, feedsData, i18n) => {
     ul.appendChild(li);
   });
 
-  feeds.appendChild(wrapper);
-  feeds.appendChild(ul);
+  feedsWrapper.appendChild(wrapper);
+  feedsWrapper.appendChild(ul);
 };
 
 const renderModal = (elements, modalStatus) => {
@@ -134,7 +148,7 @@ const renderPosts = (elements, state, i18n) => {
   const sortedPostsData = cloneOfPostsData
     .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
 
-  const { wrapper, ul } = generateContentWrapper(i18n.t('content.posts.title'));
+  const { wrapper, ul } = generateContentWrapper(i18n('content.posts.title'));
 
   sortedPostsData.forEach(({
     title,
@@ -157,7 +171,7 @@ const renderPosts = (elements, state, i18n) => {
     button.dataset.id = id;
     button.dataset.type = 'button';
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    button.textContent = i18n.t('content.posts.button');
+    button.textContent = i18n('content.posts.button');
 
     li.appendChild(a);
     li.appendChild(button);
@@ -167,7 +181,7 @@ const renderPosts = (elements, state, i18n) => {
   posts.appendChild(wrapper);
   posts.appendChild(ul);
 
-  renderViewedPosts(elements, state.ui.viewedPosts);
+  renderViewedPosts(elements, state);
 };
 
 export default {
