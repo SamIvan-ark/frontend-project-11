@@ -97,7 +97,7 @@ const renderModal = (elements, state) => {
       modal.classList.remove('show');
       modal.setAttribute('aria-hidden', 'true');
       modal.removeAttribute('aria-modal');
-      modal.setAttribute('style', 'display: none');
+      modal.setAttribute('style', 'display: none;');
       break;
     case 'shown':
       body.classList.add('modal-open');
@@ -106,7 +106,7 @@ const renderModal = (elements, state) => {
       modal.classList.add('show');
       modal.removeAttribute('aria-hidden');
       modal.setAttribute('aria-modal', 'true');
-      modal.setAttribute('style', 'display: block');
+      modal.setAttribute('style', 'display: block;');
       break;
     default:
       throw new Error(`unexpected modal status: ${modalStatus}`);
