@@ -8,14 +8,12 @@ import parseRss from './assets/helpers/parser';
 import render from './view';
 
 const formStatus = {
-  IDLE: 'idle',
   FILLING: 'filling',
   INVALID: 'invalid',
   VALID: 'valid',
   DROPPED: 'dropped',
 };
 const fetchStatus = {
-  IDLE: 'idle',
   WAITING: 'waiting',
   LOADING: 'loading',
   SUCCESSFULLY: 'successfully',
@@ -77,11 +75,11 @@ export default () => {
   }).then((i18n) => {
     const state = {
       form: {
-        status: formStatus.IDLE,
+        status: formStatus.FILLING,
         error: null,
       },
       fetch: {
-        status: fetchStatus.IDLE,
+        status: fetchStatus.WAITING,
         error: null,
       },
       feeds: [],
