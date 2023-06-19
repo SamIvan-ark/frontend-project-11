@@ -85,7 +85,8 @@ const renderFeeds = (elements, state, i18n) => {
   feedsWrapper.appendChild(ul);
 };
 
-const renderModal = (elements, modalStatus) => {
+const renderModal = (elements, state) => {
+  const { ui: { modal: { status: modalStatus } } } = state;
   const { modal, body, backdrop } = elements;
 
   switch (modalStatus) {
@@ -112,7 +113,8 @@ const renderModal = (elements, modalStatus) => {
   }
 };
 
-const renderModalContent = (elements, id, state) => {
+const renderModalContent = (elements, state) => {
+  const { ui: { modal: { postId: id } } } = state;
   const targetPost = state.posts.filter((post) => Number(post.id) === Number(id))[0];
   const { title, description, link } = targetPost;
   const { modal } = elements;

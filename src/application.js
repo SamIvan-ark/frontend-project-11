@@ -93,7 +93,7 @@ export default () => {
       },
     };
 
-    const watchedState = onChange(state, (path, value) => {
+    const watchedState = onChange(state, (path) => {
       switch (path) {
         case 'form':
           render.formStatus(elements, state);
@@ -114,10 +114,10 @@ export default () => {
           render.posts(elements, state, i18n);
           break;
         case 'ui.modal.status':
-          render.modal(elements, value);
+          render.modal(elements, state);
           break;
         case 'ui.modal.postId':
-          render.modalContent(elements, value, state);
+          render.modalContent(elements, state);
           break;
         case 'ui.viewedPosts':
           render.viewedPosts(elements, state);
