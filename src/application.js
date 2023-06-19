@@ -45,19 +45,19 @@ const buildSchema = (feeds) => yup
 
 const validateLink = (link, schema) => schema.validate(link);
 
-const elements = {
-  body: document.body,
-  form: document.querySelector('.rss-form'),
-  input: document.querySelector('#url-input'),
-  messageElement: document.querySelector('.feedback'),
-  submitButton: document.querySelector('[type=submit]'),
-  feeds: document.querySelector('.feeds'),
-  posts: document.querySelector('.posts'),
-  modal: document.querySelector('#modal'),
-  backdrop: document.querySelector('#backdrop'),
-};
-
 export default () => {
+  const elements = {
+    body: document.body,
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('#url-input'),
+    messageElement: document.querySelector('.feedback'),
+    submitButton: document.querySelector('[type=submit]'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
+    modal: document.querySelector('#modal'),
+    backdrop: document.querySelector('#backdrop'),
+  };
+
   yup.setLocale({
     string: {
       url: 'invalidUrl',
