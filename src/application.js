@@ -254,11 +254,9 @@ export default () => {
 
       Promise.allSettled(feedRequests)
         .then((responces) => responces
-          .map((responce) => parseRss(responce.value.data.contents)))
-        .then((parsedResponces) => parsedResponces
-          .map((data) => data.channel.items))
-        .then((actualPostsInAllFeeds) => {
-          actualPostsInAllFeeds.forEach((actualPostsInFeed, feedId) => {
+          .map((responce) => parseRss(responce.value.data.contents))
+          .map((data) => data.channel.items)
+          .forEach((actualPostsInFeed, feedId) => {
             const knownPostsLinks = state.posts.map((post) => post.link);
             const newPosts = actualPostsInFeed
               .filter(({ link }) => !knownPostsLinks.includes(link));
@@ -274,8 +272,7 @@ export default () => {
               });
               watchedState.posts = [...state.posts, ...postsDataWithIds];
             }
-          });
-        })
+          }))
         .finally(() => {
           setTimeout(infiniteFeedsRefreshingWithDelay, REFRESHING_DELAY_IN_MS);
         });
