@@ -30,16 +30,12 @@ const renderFormMessage = (elements, state, initiator, i18n) => {
   messageElement.textContent = i18n(mapOfFromMessages[messageKey]);
 };
 
-const renderFormStatus = (elements, state) => {
+const renderForm = (elements, state) => {
   switch (state.form.status) {
+    case 'filling':
+      break;
     case 'invalid':
       elements.input.classList.add('is-invalid');
-      break;
-    case 'dropped':
-      elements.form.reset();
-      elements.input.focus();
-      break;
-    case 'filling':
       break;
     case 'valid':
       elements.input.classList.remove('is-invalid');
@@ -49,18 +45,20 @@ const renderFormStatus = (elements, state) => {
   }
 };
 
-const renderButtonStatus = (elements, state) => {
+const renderButtonAndForm = (elements, state) => {
   switch (state.fetch.status) {
+    case 'waiting':
+      break;
     case 'loading':
       elements.submitButton.classList.add('disabled');
       break;
     case 'successfully':
+      elements.form.reset();
+      elements.input.focus();
       elements.submitButton.classList.remove('disabled');
       break;
     case 'failed':
       elements.submitButton.classList.remove('disabled');
-      break;
-    case 'waiting':
       break;
     default:
       throw new Error(`Unexpected fetch status: ${state.fetch.status}`);
@@ -189,8 +187,8 @@ const renderPosts = (elements, state, i18n) => {
 
 export default {
   formMessage: renderFormMessage,
-  formStatus: renderFormStatus,
-  buttonStatus: renderButtonStatus,
+  form: renderForm,
+  buttonAndForm: renderButtonAndForm,
   feeds: renderFeeds,
   posts: renderPosts,
   modal: renderModal,

@@ -11,7 +11,6 @@ const formStatus = {
   FILLING: 'filling',
   INVALID: 'invalid',
   VALID: 'valid',
-  DROPPED: 'dropped',
 };
 const fetchStatus = {
   WAITING: 'waiting',
@@ -96,13 +95,13 @@ export default () => {
     const watchedState = onChange(state, (path) => {
       switch (path) {
         case 'form':
-          render.formStatus(elements, state);
+          render.form(elements, state);
           if (statusesWithMessages.includes(state.form.status)) {
             render.formMessage(elements, state, path, i18n);
           }
           break;
         case 'fetch':
-          render.buttonStatus(elements, state);
+          render.buttonAndForm(elements, state);
           if (statusesWithMessages.includes(state.fetch.status)) {
             render.formMessage(elements, state, path, i18n);
           }
@@ -175,10 +174,6 @@ export default () => {
           watchedState.posts = [...state.posts, ...posts];
           watchedState.fetch = {
             status: fetchStatus.SUCCESSFULLY,
-            error: null,
-          };
-          watchedState.form = {
-            status: formStatus.DROPPED,
             error: null,
           };
           watchedState.form = {
