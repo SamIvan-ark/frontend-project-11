@@ -33,7 +33,7 @@ const routes = {
     const url = new URL('https://allorigins.hexlet.app/get');
     url.searchParams.set('disableCache', true);
     url.searchParams.set('url', link);
-    return url;
+    return url.toString();
   },
 };
 
